@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dounia Social</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #000; color: #fff; }
+    .header { position: sticky; top: 0; background: #000; padding: 12px; border-bottom: 1px solid #262626; z-index: 10; }
+    .header h1 { font-size: 24px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .tabs { display: flex; border-bottom: 1px solid #262626; }
+    .tab { flex: 1; padding: 12px; text-align: center; font-weight: 600; border: none; background: #000; color: #888; }
+    .tab.active { color: #fff; border-bottom: 2px solid #fff; }
+    .content { padding: 16px; padding-bottom: 80px; }
+    .stories { display: flex; gap: 12px; overflow-x: auto; padding: 16px 0; border-bottom: 1px solid #262626; }
+    .story { min-width: 70px; text-align: center; }
+    .story-circle { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(45deg, #f09433, #e6683c); padding: 2px; }
+    .story-img { width: 100%; height: 100%; border-radius: 50%; background: #262626; border: 2px solid #000; }
+    .story span { font-size: 12px; margin-top: 4px; display: block; }
+    .post { background: #0a0a0a; border: 1px solid #262626; border-radius: 8px; margin: 16px 0; }
+    .post-header { display: flex; align-items: center; padding: 12px; gap: 10px; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #262626; }
+    .post-body { padding: 0 12px 12px; }
+    .post-amount { font-size: 18px; font-weight: bold; margin: 8px 0; }
+    .pos { color: #4ade80; }
+    .neg { color: #f87171; }
+    .snap-msg { background: #262626; padding: 12px; border-radius: 18px; margin: 8px 0; font-size: 14px; }
+    .composer { position: fixed; bottom: 0; left: 0; right: 0; background: #000; border-top: 1px solid #262626; padding: 12px; }
+    input, textarea { width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; border: 1px solid #262626; background: #1a1a1a; color: white; }
+    .composer-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .composer-btns button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; }
+    .btn-revenu { background: #22c55e; }
+    .btn-depense { background: #ef4444; }
+    .btn-post { background: #0095f6; }
+    .btn-snap { background: #fffc00; color: #000; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header"><h1>Dounia Social</h1></div>
+  
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('feed')">Feed</button>
+    <button class="tab" onclick="switchTab('tech')">Tech</button>
+    <button class="tab" onclick="switchTab('secu')">Sécurisé</button>
+  </div>
+
+  <!-- FEED FACEBOOK -->
+  <div id="feed" class="content">
+    <div class="stories" id="stories"></div>
+    <div id="feedList"></div>
+  </div>
+
+  <!-- TECHNO INSTA -->
+  <div id="tech" class="content hidden">
+    <h3 style="margin-bottom:12px;">💻 Projets Tech</h3>
+    <div id="techList"></div>
+  </div>
+
+  <!-- SECURITE SNAP -->
+  <div id="secu" class="content hidden">
+    <h3 style="margin-bottom:12px;">🔒 Messages éphémères 24h</h3>
+    <div id="snapList"></div>
+  </div>
+
+  <!-- COMPOSER -->
+  <div class="composer">
+    <input id="desc" placeholder="Quoi de neuf ? Montant + description">
+    <input id="amount" type="number" placeholder="Montant FCFA" style="display:none;">
+    <div class="composer-btns">
+      <button class="btn-post" onclick="addPost()">Poster</button>
+      <button class="btn-revenu" onclick="addTx('revenu')">+ Revenu</button>
+      <button class="btn-depense" onclick="addTx('depense')">- Dépense</button>
+      <button class="btn-snap" onclick="addSnap()">Snap 👻</button>
+    </div>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, initializeFirestore, collection, addDoc, onSnapshot, query, orderBy, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBcOxcvIBxV5Nxi4sh3Za0m9CVzrS1VHd4",
+    authDomain: "dounia-universe.firebaseapp.com",
+    projectId: "dounia-universe",
+    storageBucket: "dounia-universe.firebasestorage.app",
+    messagingSenderId: "487792681622",
+    appId: "1:487792681622:web:f67122fa2348c3724358b7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
+
+  // TABS
+  window.switchTab = (tab) => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
+    event.target.classList.add('active');
+    document.getElementById(tab).classList.remove('hidden');
+  }
+
+  // AJOUTER POST SIMPLE
+  window.addPost = async () => {
+    const desc = document.getElementById('desc').value;
+    if (!desc) return;
+    await addDoc(collection(db, "posts"), {
+      type: 'post',
+      description: desc,
+      createdAt: new Date()
+    });
+    document.getElementById('desc').value = '';
+  }
+
+  // AJOUTER TRANSACTION
+  window.addTx = async (type) => {
+    const desc = document.getElementById('desc').value;
+    const amount = document.getElementById('amount').value;
+    if (!desc || !amount) return alert('Remplis description + montant');
+    await addDoc(collection(db, "posts"), {
+      type: 'transaction',
+      txType: type,
+      amount: Number(amount),
+      description: desc,
+      createdAt: new Date()
+    });
+    document.getElementById('desc').value = '';
+    document.getElementById('amount').value = '';
+  }
+
+  // AJOUTER SNAP EPHEMERE
+  window.addSnap = async () => {
+    const desc = document.getElementById('desc').value;
+    if (!desc) return;
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // 24h
+    await addDoc(collection(db, "posts"), {
+      type: 'snap',
+      description: desc,
+      createdAt: new Date(),
+      expiresAt: expiresAt
+    });
+    document.getElementById('desc').value = '';
+  }
+
+  // AFFICHAGE FEED
+  onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc")), (snap) => {
+    const feedList = document.getElementById('feedList');
+    const techList = document.getElementById('techList');
+    const snapList = document.getElementById('snapList');
+    feedList.innerHTML = '';
+    techList.innerHTML = '';
+    snapList.innerHTML = '';
+    
+    const now = new Date();
+    
+    snap.docs.forEach(doc => {
+      const p = doc.data();
+      const date = p.createdAt.toDate().toLocaleString('fr-FR');
+      
+      // POST FEED
+      if (p.type === 'post' || p.type === 'transaction') {
+        let html = `<div class="post">
+          <div class="post-header">
+            <div class="avatar"></div>
+            <div><b>Toi</b><br><span style="font-size:12px;color:#888;">${date}</span></div>
+          </div>
+          <div class="post-body">`;
+        if (p.type === 'transaction') {
+          html += `<div class="post-amount ${p.txType === 'revenu' ? 'pos' : 'neg'}">
+            ${p.txType === 'revenu' ? '+' : '-'}${p.amount} FCFA
+          </div>`;
+        }
+        html += `<p>${p.description}</p></div></div>`;
+        feedList.innerHTML += html;
+      }
+
+      // TECH = transactions seulement
+      if (p.type === 'transaction') {
+        techList.innerHTML += `<div class="post"><div class="post-body">
+          <div class="post-amount ${p.txType === 'revenu' ? 'pos' : 'neg'}">${p.txType === 'revenu' ? '+' : '-'}${p.amount} FCFA</div>
+          <p>${p.description}</p><span style="font-size:12px;color:#888;">${date}</span>
+        </div></div>`;
+      }
+
+      // SNAP = messages < 24h
+      if (p.type === 'snap' && p.expiresAt.toDate() > now) {
+        snapList.innerHTML += `<div class="snap-msg">👻 ${p.description}<br><span style="font-size:11px;color:#888;">Expire: ${p.expiresAt.toDate().toLocaleTimeString('fr-FR')}</span></div>`;
+      }
+    });
+
+    // STORIES = 3 derniers revenus
+    const stories = document.getElementById('stories');
+    stories.innerHTML = '';
+    snap.docs.filter(d => d.data().type === 'transaction' && d.data().txType === 'revenu').slice(0,5).forEach(doc => {
+      const p = doc.data();
+      stories.innerHTML += `<div class="story">
+        <div class="story-circle"><div class="story-img"></div></div>
+        <span>+${p.amount}</span>
+      </div>`;
+    });
+  });
+
+  // Affiche/masque champ montant
+  document.getElementById('desc').addEventListener('input', (e) => {
+    const amount = document.getElementById('amount');
+    amount.style.display = e.target.value.match(/\d/) ? 'block' : 'none';
+  });
+</script>
+</body>
+</html>

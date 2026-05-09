@@ -1,0 +1,14 @@
+[debug] [2026-05-09T20:16:11.172Z] ----------------------------------------------------------------------
+[debug] [2026-05-09T20:16:11.197Z] Command:       /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/bin/firebase deploy
+[debug] [2026-05-09T20:16:11.199Z] CLI Version:   15.17.0
+[debug] [2026-05-09T20:16:11.199Z] Platform:      android
+[debug] [2026-05-09T20:16:11.199Z] Node Version:  v25.8.2
+[debug] [2026-05-09T20:16:11.200Z] Time:          Sat May 09 2026 21:16:11 GMT+0100 (West Africa Time)
+[debug] [2026-05-09T20:16:11.201Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-09T20:16:22.872Z] Error: Timed out.
+    at Timeout._onTimeout (/data/data/com.termux/files/usr/lib/node_modules/firebase-tools/lib/utils.js:309:49)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+[error] 
+[error] Error: An unexpected error has occurred.

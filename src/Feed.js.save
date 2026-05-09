@@ -1,0 +1,227 @@
+import { useState } from 'react';
+
+function Feed({ onBack }) {
+  const [posts] = useState([
+    {
+      id: 1,
+      user: "Aïcha Pro",
+      avatar: "👩🏾‍💻",
+      time: "2h",
+      text: "Dounia Universe c'est le futur. Le feed est 10x plus clean que Facebook 🔥",
+      likes: 234,
+      comments: 12,
+      badge: "Pro"
+    },
+    {
+      id: 2,
+      user: "Koffi Dev",
+      avatar: "👨🏿‍💻",
+      time: "4h",
+      text: "Enfin un réseau social africain qui charge vite même en 2G. Respect 🙌🏾",
+      likes: 189,
+      comments: 8,
+      badge: null
+    },
+    {
+      id: 3,
+      user: "Fatou Creator",
+      avatar: "👩🏾‍🎨",
+      time: "6h",
+      text: "Mes stories HD passent crème. Plus de compression dégueu comme sur Insta",
+      likes: 412,
+      comments: 23,
+      badge: "Pro"
+    }
+  ]);
+
+  const [stories] = useState([
+    { id: 1, user: "Toi", avatar: "➕" },
+    { id: 2, user: "Aïcha", avatar: "👩🏾‍💻" },
+    { id: 3, user: "Koffi", avatar: "👨🏿‍💻" },
+    { id: 4, user: "Fatou", avatar: "👩🏾‍🎨" },
+    { id: 5, user: "Moussa", avatar: "👨🏾‍🚀" }
+  ]);
+
+  const [likedPosts, setLikedPosts] = useState([]);
+
+  const toggleLike = (postId) => {
+    if (likedPosts.includes(postId)) {
+      setLikedPosts(likedPosts.filter(id => id!== postId));
+    } else {
+      setLikedPosts([...likedPosts, postId]);
+    }
+  };
+
+  const headerStyle = {
+    position: "sticky",
+    top: 0,
+    backgroundColor: "#000",
+    borderBottom: "1px solid #222",
+    padding: "16px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    zIndex: 10
+  };
+
+  const storyStyle = {
+    display: "flex",
+    gap: "12px",
+    padding: "16px",
+    overflowX: "auto",
+    borderBottom: "1px solid #222"
+  };
+
+  const storyItemStyle = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "6px",
+    minWidth: "70px"
+  };
+
+  const storyCircle = {
+    width: "60px",
+    height: "60px",
+    borderRadius: "50%",
+    background: "linear-gradient(45deg, #8B5CF6, #EC4899)",
+    padding: "2px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  };
+
+  const storyInner = {
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    backgroundColor: "#1a1a1a",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "24px"
+  };
+
+  const postStyle = {
+    borderBottom: "1px solid #222",
+    padding: "16px"
+  };
+
+  const postHeader = {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "12px"
+  };
+
+  const avatarStyle = {
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    backgroundColor: "#333",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "20px"
+  };
+
+  const postActions = {
+    display: "flex",
+    gap: "20px",
+    marginTop: "12px",
+    fontSize: "24px",
+    alignItems: "center"
+  };
+
+  return (
+    <div style={{
+      backgroundColor: "#000",
+      color: "#fff",
+      minHeight: "100vh",
+      fontFamily: "system-ui, -apple-system, Arial"
+    }}>
+      <div style={headerStyle}>
+        <h1 style={{ margin: 0, fontSize: "24px" }}>Dounia</h1>
+        <div style={{ display: "flex", gap: "20px", fontSize: "24px" }}>
+          <span style={{ cursor: "pointer" }}>💬</span>
+          <span onClick={onBack} style={{ cursor: "pointer" }}>⚙️</span>
+        </div>
+      </div>
+
+      <div style={storyStyle}>
+        {stories.map(story => (
+          <div key={story.id} style={storyItemStyle}>
+            <div style={storyCircle}>
+              <div style={storyInner}>{story.avatar}</div>
+            </div>
+            <span style={{ fontSize: "12px", color: "#ccc" }}>{story.user}</span>
+          </div>
+        ))}
+      </div>
+
+      {posts.map(post => (
+        <div key={post.id} style={postStyle}>
+          <div style={postHeader}>
+            <div style={avatarStyle}>{post.avatar}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontWeight: "bold" }}>{post.user}</span>
+                {post.badge && (
+                  <span style={{
+                    backgroundColor: "#8B5CF6",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    fontSize: "10px",
+                    fontWeight: "bold"
+                  }}>
+                    {post.badge}
+                  </span>
+                )}
+              </div>
+              <span style={{ color: "#888", fontSize: "12px" }}>{post.time}</span>
+            </div>
+          </div>
+
+          <div style={{ lineHeight: "1.5", marginBottom: "12px" }}>
+            {post.text}
+          </div>
+
+          <div style={postActions}>
+            <span
+              onClick={() => toggleLike(post.id)}
+              style={{ cursor: "pointer" }}
+            >
+              {likedPosts.includes(post.id)? "❤️" : "🤍"}
+            </span>
+            <span style={{ fontSize: "14px" }}>
+              {likedPosts.includes(post.id)? post.likes + 1 : post.likes}
+            </span>
+            <span style={{ cursor: "pointer" }}>💬</span>
+            <span style={{ fontSize: "14px" }}>{post.comments}</span>
+            <span style={{ cursor: "pointer" }}>🔄</span>
+          </div>
+        </div>
+      ))}
+
+      <div style={{
+        position: "fixed",
+        bottom: "20px",
+        right: "20px",
+        width: "56px",
+        height: "56px",
+        borderRadius: "50%",
+        backgroundColor: "#8B5CF6",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "28px",
+        cursor: "pointer",
+        boxShadow: "0 4px 12px rgba(139, 92, 246, 0.4)"
+      }}>
+        +
+      </div>
+    </div>
+  );
+}
+
+export default Feed;
