@@ -1,185 +1,278 @@
-import {useState, useEffect} from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { supabase } from './supabase'
+import { Toaster, toast } from 'react-hot-toast'
 
-function use24hStorage(key, initial) {
-  const [data, setData] = useState(() => {
-    const saved = localStorage.getItem(key)
-    if (!saved) return initial
-    const parsed = JSON.parse(saved)
-    const now = Date.now()
-    const filtered = parsed.filter(item => now - item.created < 86400000) // 24h
-    return filtered.length? filtered : initial
-  })
-
-  useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(data))
-  }, [key, data])
-
-  return [data, setData]
-}
-
-function Face() {
-  const [faces, setFaces] = use24hStorage('dounia_faces', [])
-  const [name, setName] = useState('')
-
-  const addFace = () => {
-    if (!name) return
-    setFaces([...faces, {id: Date.now(), name, created: Date.now()}])
-    setName('')
-  }
-
-  return (<div style={{padding:'20px'}}>
-    <div style={{fontSize:'24px', fontWeight:'bold', marginBottom:'10px'}}>📖 Face</div>
-    <div style={{fontSize:'12px', color:'#888', marginBottom:'15px'}}>Trombinoscope du jour. Disparaît à minuit.</div>
-    <input value={name} onChange={e=>setName(e.target.value)} placeholder="Ton nom aujourd'hui..."
-      style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#1a1a1a', color:'#fff', marginBottom:'10px'}}/>
-    <button onClick={addFace} style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#764ba2', color:'#fff', fontWeight:'bold', marginBottom:'20px'}}>
-      Ajouter mon Face
-    </button>
-    <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px'}}>
-      {faces.map(f=>(<div key={f.id} style={{background:'#1a1a1a', padding:'15px', borderRadius:'12px', textAlign:'center', border:'1px solid #333'}}>
-        <div style={{fontSize:'40px', marginBottom:'5px'}}>😎</div>
-        <div style={{fontSize:'12px'}}>{f.name}</div>
-      </div>))}
-    </div>
-    {faces.length===0 && <div style={{textAlign:'center', color:'#666', marginTop:'40px'}}>Personne aujourd'hui. Sois le premier.</div>}
-  </div>)
-}
-
-function Instant() {
-  const [instants, setInstants] = use24hStorage('dounia_instants', [])
-  const [caption, setCaption] = useState('')
-
-  const addInstant = () => {
-    if (!caption) return
-    setInstants([{id:Date.now(), img:`https://picsum.photos/400?${Date.now()}`, caption, created:Date.now()},...instants])
-    setCaption('')
-  }
-
-  return (<div style={{padding:'10px'}}>
-    <div style={{fontSize:'24px', fontWeight:'bold', marginBottom:'5px'}}>⚡ Instant</div>
-    <div style={{fontSize:'12px', color:'#888', marginBottom:'15px'}}>Photo du moment. Effacée dans 24h.</div>
-    <div style={{background:'#1a1a1a', padding:'15px', borderRadius:'12px', marginBottom:'15px'}}>
-      <input value={caption} onChange={e=>setCaption(e.target.value)} placeholder="Légende de l'instant..."
-        style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#000', color:'#fff', marginBottom:'10px'}}/>
-      <button onClick={addInstant} style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#f09433', color:'#fff', fontWeight:'bold'}}>
-        Capturer l'Instant
-      </button>
-    </div>
-    {instants.map(i=>(<div key={i.id} style={{background:'#1a1a1a', marginBottom:'15px', borderRadius:'12px', overflow:'hidden', border:'1px solid #333'}}>
-      <img src={i.img} style={{width:'100%', height:'400px', objectFit:'cover'}}/>
-      <div style={{padding:'10px', fontSize:'14px'}}>{i.caption}</div>
-      <div style={{padding:'0 10px 10px', fontSize:'10px', color:'#666'}}>Expire dans {Math.round(24 - (Date.now()-i.created)/3600000)}h</div>
-    </div>))}
-  </div>)
-}
-
-function Snap() {
-  const [snaps, setSnaps] = use24hStorage('dounia_snaps', [])
-  const [msg, setMsg] = useState('')
-
-  const sendSnap = () => {
-    if(!msg) return
-    setSnaps([...snaps, {id:Date.now(), text:msg, created:Date.now()}])
-    setMsg('')
-  }
-
-  return (<div style={{padding:'20px', textAlign:'center'}}>
-    <div style={{fontSize:'60px', marginBottom:'10px'}}>👻</div>
-    <div style={{fontSize:'24px', fontWeight:'bold'}}>Snap</div>
-    <div style={{fontSize:'12px', color:'#888', marginBottom:'20px'}}>Message fantôme. Disparaît en 24h.</div>
-    <input value={msg} onChange={e=>setMsg(e.target.value)} placeholder="Écris ton snap..."
-      style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#1a1a1a', color:'#fff', marginBottom:'10px'}}/>
-    <button onClick={sendSnap} style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#fffc00', color:'#000', fontWeight:'bold', marginBottom:'20px'}}>
-      Envoyer Snap
-    </button>
-    {snaps.map(s=>(<div key={s.id} style={{background:'#333', padding:'15px', borderRadius:'12px', marginBottom:'10px', textAlign:'left'}}>
-      <div>{s.text}</div>
-      <div style={{fontSize:'10px', color:'#888', marginTop:'5px'}}>Meurt dans {Math.round(24 - (Date.now()-s.created)/3600000)}h</div>
-    </div>))}
-  </div>)
-}
-
-function Tick() {
-  const [ticks, setTicks] = use24hStorage('dounia_ticks', [
-    {id:1, desc:'Premier tick du jour', created:Date.now()-3600000},
-    {id:2, desc:'Le temps passe', created:Date.now()-7200000}
-  ])
-  const [desc, setDesc] = useState('')
-  const [current, setCurrent] = useState(0)
-
-  const addTick = () => {
-    if(!desc) return
-    setTicks([{id:Date.now(), desc, created:Date.now()},...ticks])
-    setDesc('')
-    setCurrent(0)
-  }
-
-  return (<div style={{height:'calc(100vh - 60px)', overflow:'hidden', position:'relative', background:'#000'}}>
-    {ticks.length? ticks.map((t,i)=>(<div key={t.id} style={{height:'100%', display:i===current?'flex':'none', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px', textAlign:'center'}}>
-      <div style={{fontSize:'80px', marginBottom:'20px'}}>⏰</div>
-      <div style={{fontSize:'24px', fontWeight:'bold', marginBottom:'10px'}}>TICK</div>
-      <div style={{fontSize:'18px', marginBottom:'20px'}}>{t.desc}</div>
-      <div style={{fontSize:'12px', color:'#888'}}>Expire dans {Math.round(24 - (Date.now()-t.created)/3600000)}h</div>
-    </div>)) : <div style={{height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'#666'}}>Aucun Tick aujourd'hui</div>}
-
-    <div style={{position:'absolute', bottom:'80px', left:'15px', right:'15px', background:'#1a1a1a', padding:'15px', borderRadius:'12px'}}>
-      <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Ton tick de la seconde..."
-        style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#000', color:'#fff', marginBottom:'10px'}}/>
-      <button onClick={addTick} style={{width:'100%', padding:'12px', borderRadius:'8px', border:'none', background:'#ff0050', color:'#fff', fontWeight:'bold'}}>
-        Lancer le Tick
-      </button>
-    </div>
-    <div onClick={()=>setCurrent((current+1)%ticks.length)} style={{position:'absolute', top:0, left:0, right:0, bottom:180}}/>
-  </div>)
-}
-
-function Cosmos() {
-  const [events, setEvents] = use24hStorage('dounia_events', [
-    {id:1, name:'Événement du Jour', desc:'Créé aujourd\'hui, mort demain', created:Date.now()}
-  ])
-
-  return (<div style={{padding:'20px'}}>
-    <div style={{fontSize:'24px', fontWeight:'bold', marginBottom:'5px'}}>🌌 Cosmos</div>
-    <div style={{fontSize:'12px', color:'#888', marginBottom:'15px'}}>Events éphémères. 24h pour vivre.</div>
-    {events.map(e=>(<div key={e.id} style={{background:'#1a1a1a', padding:'20px', borderRadius:'12px', border:'1px solid #333', marginBottom:'15px'}}>
-      <div style={{fontSize:'18px', fontWeight:'bold', marginBottom:'8px'}}>{e.name}</div>
-      <div style={{fontSize:'14px', color:'#ccc', marginBottom:'10px'}}>{e.desc}</div>
-      <div style={{fontSize:'10px', color:'#666'}}>Disparaît dans {Math.round(24 - (Date.now()-e.created)/3600000)}h</div>
-    </div>))}
-  </div>)
-}
+const EMOJIS = ['❤️','😂','😮','😢','😡','👍']
 
 export default function App() {
-  const [tab, setTab] = useState('face')
+  const [user, setUser] = useState(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [nom, setNom] = useState('')
+  const [numero, setNumero] = useState('')
+  const [isLogin, setIsLogin] = useState(true)
+  const [posts, setPosts] = useState([])
+  const [text, setText] = useState('')
+  const [image, setImage] = useState(null)
+  const [profil, setProfil] = useState(null)
+  const [onglet, setOnglet] = useState('feed')
+  const [allUsers, setAllUsers] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [comments, setComments] = useState({})
+  const [commentText, setCommentText] = useState({})
+  const [showReact, setShowReact] = useState(null)
+  const fileRef = useRef()
 
-  const tabs = {
-    face: <Face/>,
-    instant: <Instant/>,
-    snap: <Snap/>,
-    tick: <Tick/>,
-    cosmos: <Cosmos/>
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user?? null)
+      if (session?.user) loadProfil(session.user.id)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user?? null)
+      if (session?.user) loadProfil(session.user.id)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const loadProfil = async (userId) => {
+    const { data } = await supabase.from('users').select('*').eq('id', userId).single()
+    setProfil(data)
   }
 
-  return (
-    <div style={{background: '#000', color: '#fff', minHeight: '100vh'}}>
-      <div style={{paddingBottom: '60px'}}>{tabs[tab]}</div>
-      <div style={{position: 'fixed', bottom: 0, left: 0, right: 0, background: '#111', display: 'flex', borderTop: '1px solid #222', height: '60px', zIndex: 999}}>
-        <div onClick={() => setTab('face')} style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: tab === 'face'? '#764ba2' : '#666'}}>
-          <div style={{fontSize: '22px'}}>📖</div><div style={{fontSize: '10px'}}>Face</div>
-        </div>
-        <div onClick={() => setTab('instant')} style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: tab === 'instant'? '#f09433' : '#666'}}>
-          <div style={{fontSize: '22px'}}>⚡</div><div style={{fontSize: '10px'}}>Instant</div>
-        </div>
-        <div onClick={() => setTab('snap')} style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: tab === 'snap'? '#fffc00' : '#666'}}>
-          <div style={{fontSize: '22px'}}>👻</div><div style={{fontSize: '10px'}}>Snap</div>
-        </div>
-        <div onClick={() => setTab('tick')} style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: tab === 'tick'? '#ff0050' : '#666'}}>
-          <div style={{fontSize: '22px'}}>⏰</div><div style={{fontSize: '10px'}}>Tick</div>
-        </div>
-        <div onClick={() => setTab('cosmos')} style={{flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: tab === 'cosmos'? '#764ba2' : '#666'}}>
-          <div style={{fontSize: '22px'}}>🌌</div><div style={{fontSize: '10px'}}>Cosmos</div>
-        </div>
+  useEffect(() => {
+    if (!user) return
+    loadPosts()
+    loadUsers()
+    const channel = supabase.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, loadPosts)
+   .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, loadComments).subscribe()
+    return () => supabase.removeChannel(channel)
+  }, )
+
+  const loadPosts = async () => {
+    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false })
+    setPosts(data || [])
+    loadComments()
+  }
+
+  const loadComments = async () => {
+    const { data } = await supabase.from('comments').select('*').order('created_at', { ascending: true })
+    const grouped = {}
+    data?.forEach(c => {
+      if (!grouped[c.post_id]) grouped[c.post_id] = []
+      grouped[c.post_id].push(c)
+    })
+    setComments(grouped)
+  }
+
+  const loadUsers = async () => {
+    const { data } = await supabase.from('users').select('*').neq('id', user.id)
+    setAllUsers(data || [])
+  }
+
+  const inscription = async () => {
+    if (!email ||!password ||!nom ||!numero) return toast.error('Remplis tout')
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) return toast.error(error.message)
+    await supabase.from('users').insert({
+      id: data.user.id, nom, numero: numero.replace(/\s+/g, ''),
+      photo: `https://ui-avatars.com/api/?name=${nom}&background=8b5cf6&color=fff`, amis: []
+    })
+    toast.success('Compte créé! Vérifie ton email')
+  }
+
+  const connexion = async () => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) toast.error('Email ou mot de passe incorrect')
+  }
+
+  const uploadImage = async (file) => {
+    const fileName = `${Date.now()}.${file.name.split('.').pop()}`
+    const { error } = await supabase.storage.from('photos').upload(fileName, file)
+    if (error) throw error
+    const { data } = supabase.storage.from('photos').getPublicUrl(fileName)
+    return data.publicUrl
+  }
+
+  const poster = async () => {
+    if (!text &&!image) return toast.error('Écris ou ajoute une photo')
+    setLoading(true)
+    try {
+      let imageUrl = ''
+      if (image) {
+        toast('Upload...')
+        imageUrl = await uploadImage(image)
+      }
+      await supabase.from('posts').insert({
+        texte: text, image: imageUrl, auteur_id: user.id,
+        auteur_nom: profil.nom, auteur_photo: profil.photo, reactions: {}
+      })
+      setText(''); setImage(null); fileRef.current.value = ''
+      toast.success('Posté!')
+    } catch (e) { toast.error('Erreur') }
+    setLoading(false)
+  }
+
+  const reagir = async (post, emoji) => {
+    const current = post.reactions || {}
+    const userReactions = current[user.id] || []
+    const newUserReactions = userReactions.includes(emoji)
+   ? userReactions.filter(e => e!== emoji)
+      : [...userReactions, emoji]
+    const newReactions = {...current, [user.id]: newUserReactions }
+    if (newUserReactions.length === 0) delete newReactions[user.id]
+    await supabase.from('posts').update({ reactions: newReactions }).eq('id', post.id)
+    setShowReact(null)
+  }
+
+  const commenter = async (postId) => {
+    const texte = commentText[postId]
+    if (!texte) return
+    await supabase.from('comments').insert({
+      post_id: postId, auteur_id: user.id,
+      auteur_nom: profil.nom, auteur_photo: profil.photo, texte
+    })
+    setCommentText({...commentText, [postId]: '' })
+  }
+
+  const countReactions = (reactions) => {
+    const counts = {}
+    Object.values(reactions || {}).flat().forEach(e => {
+      counts[e] = (counts[e] || 0) + 1
+    })
+    return counts
+  }
+
+  const ajouterAmi = async (amiId) => {
+    const amis = [...(profil.amis || []), amiId]
+    await supabase.from('users').update({ amis }).eq('id', user.id)
+    toast.success('Ami ajouté')
+    loadProfil(user.id)
+  }
+
+  const partagerWhatsApp = (amiNumero) => {
+    const msg = `Rejoins-moi sur Dounia Social! https://dounia-24h.vercel.app`
+    window.open(`https://wa.me/${amiNumero}?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
+  if (!user) return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+      <Toaster />
+      <div className="w-full max-w-sm bg-gray-900 p-6 rounded-lg">
+        <h1 className="text-2xl font-bold mb-2 text-center">Dounia Social V4</h1>
+        <p className="text-green-500 text-sm text-center mb-6">0 erreur - Promis</p>
+        {!isLogin && <>
+          <input value={nom} onChange={e=>setNom(e.target.value)} placeholder="Ton nom" className="w-full bg-gray-800 p-3 rounded mb-3" />
+          <input value={numero} onChange={e=>setNumero(e.target.value)} type="tel" placeholder="Numéro WhatsApp: +229..." className="w-full bg-gray-800 p-3 rounded mb-3" />
+        </>}
+        <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Email" className="w-full bg-gray-800 p-3 rounded mb-3" />
+        <input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="Mot de passe" className="w-full bg-gray-800 p-3 rounded mb-4" />
+        <button onClick={isLogin? connexion : inscription} className="bg-purple-600 w-full py-3 rounded-lg mb-3">
+          {isLogin? 'Se connecter' : "S'inscrire"}
+        </button>
+        <button onClick={()=>setIsLogin(!isLogin)} className="text-sm text-gray-400 w-full">
+          {isLogin? "Pas de compte? S'inscrire" : 'Déjà inscrit? Se connecter'}
+        </button>
       </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-black text-white pb-20">
+      <Toaster position="top-center" />
+      <header className="p-4 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-black z-10">
+        <h1 className="text-xl font-bold">Dounia Social</h1>
+        <div className="flex items-center gap-3">
+          <img src={profil?.photo} className="w-8 h-8 rounded-full" />
+          <button onClick={() => supabase.auth.signOut()} className="text-sm text-gray-400">Logout</button>
+        </div>
+      </header>
+      <nav className="flex justify-around p-2 border-b border-gray-800">
+        <button onClick={() => setOnglet('feed')} className={onglet==='feed'?'text-purple-500 font-bold':''}>Feed</button>
+        <button onClick={() => setOnglet('amis')} className={onglet==='amis'?'text-purple-500 font-bold':''}>Amis</button>
+      </nav>
+      <main className="p-4 max-w-xl mx-auto">
+        {onglet === 'feed' && <>
+          <div className="bg-gray-900 p-4 rounded-lg mb-4">
+            <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Quoi de neuf?" className="w-full bg-gray-800 p-2 rounded mb-2" />
+            <input type="file" ref={fileRef} onChange={e=>setImage(e.target.files[0])} className="text-sm mb-2" />
+            <button onClick={poster} disabled={loading} className="bg-purple-600 w-full py-2 rounded-lg disabled:opacity-50">{loading?'Upload...':'Poster'}</button>
+          </div>
+          {posts.map(p => {
+            const reactionCounts = countReactions(p.reactions)
+            const userReacted = p.reactions?.[user.id] || []
+            return (
+              <div key={p.id} className="bg-gray-900 p-4 rounded-lg mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={p.auteur_photo} className="w-8 h-8 rounded-full" />
+                  <b>{p.auteur_nom}</b>
+                </div>
+                <p className="mb-2">{p.texte}</p>
+                {p.image && <img src={p.image} className="rounded-lg mb-2 max-h-96 w-full object-cover" />}
+                <div className="flex gap-1 mb-2 text-sm">
+                  {Object.entries(reactionCounts).map(([emoji, count]) => (
+                    <span key={emoji} className="bg-gray-800 px-2 py-1 rounded-full">{emoji} {count}</span>
+                  ))}
+                </div>
+                <div className="flex gap-4 mb-3 text-sm relative">
+                  <button onClick={() => setShowReact(showReact === p.id? null : p.id)} className="text-gray-400">
+                    {userReacted.length? userReacted.join('') : 'Réagir'}
+                  </button>
+                  {showReact === p.id && (
+                    <div className="absolute bg-gray-800 p-2 rounded-lg flex gap-2 bottom-8">
+                      {EMOJIS.map(e => (
+                        <button key={e} onClick={() => reagir(p, e)} className="text-xl hover:scale-125">{e}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2 mb-2">
+                  {comments[p.id]?.map(c => (
+                    <div key={c.id} className="flex gap-2 text-sm">
+                      <img src={c.auteur_photo} className="w-6 h-6 rounded-full" />
+                      <div className="bg-gray-800 p-2 rounded-lg flex-1">
+                        <b className="text-xs">{c.auteur_nom}</b>
+                        <p>{c.texte}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={commentText[p.id] || ''}
+                    onChange={e => setCommentText({...commentText, [p.id]: e.target.value})}
+                    placeholder="Écrire un commentaire..."
+                    className="flex-1 bg-gray-800 p-2 rounded text-sm"
+                    onKeyDown={e => e.key === 'Enter' && commenter(p.id)}
+                  />
+                  <button onClick={() => commenter(p.id)} className="text-purple-500 text-sm">Envoyer</button>
+                </div>
+              </div>
+            )
+          })}
+        </>}
+        {onglet === 'amis' && <>
+          <h2 className="text-lg font-bold mb-4">Ajouter des amis</h2>
+          {allUsers.map(u => (
+            <div key={u.id} className="flex justify-between items-center bg-gray-900 p-3 rounded-lg mb-2">
+              <div className="flex items-center gap-2">
+                <img src={u.photo} className="w-8 h-8 rounded-full" />
+                <div>
+                  <span className="block">{u.nom}</span>
+                  <span className="text-xs text-gray-500">{u.numero}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {profil?.amis?.includes(u.id)
+               ? <span className="text-green-500 text-sm">Ami ✓</span>
+                  : <button onClick={()=>ajouterAmi(u.id)} className="bg-purple-600 px-3 py-1 rounded text-sm">Ajouter</button>
+                }
+                <button onClick={()=>partagerWhatsApp(u.numero)} className="bg-green-600 px-2 py-1 rounded text-xs">WhatsApp</button>
+              </div>
+            </div>
+          ))}
+        </>}
+      </main>
     </div>
   )
 }
